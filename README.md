@@ -44,7 +44,7 @@ If you haven't installed Docker and Docker Compose, you can do so using the foll
 
 ```bash
 sudo apt update
-sudo apt install -y git docker.io docker-compose nodejs npm
+sudo apt install -y git docker.io docker-compose
 sudo systemctl enable --now docker
 ```
 
