@@ -109,7 +109,7 @@ Build and start the application using Docker Compose:
 ```bash
 docker-compose up -d --build
 ```
-This command starts both the `whatsapp_gateway` (Node.js WhatsApp client) and `summary_bot` (Python backend) in the background.
+This command starts the `whatsapp_gateway` (Node.js backend), `summary_bot` (Python worker), and the `frontend` web interface. The frontend will be accessible on your host machine at port `8080`.
 
 ### 7. Link WhatsApp Account
 After the containers start, you need to link the bot to a WhatsApp account. Check the gateway logs to view the QR code:
@@ -132,21 +132,4 @@ Add the following line to the end of the file:
 ```
 *(Make sure to replace `/path/to/bots` with the absolute path to your cloned directory).*
 
-### 9. Frontend Configuration
-The application includes a React/Vite frontend interface located in the `frontend` directory. Since this is not currently managed by Docker Compose, you must install its dependencies and run it manually.
 
-Navigate to the frontend directory:
-```bash
-cd frontend
-```
-
-Install the Node dependencies (includes React, Tailwind CSS, Radix UI components):
-```bash
-npm install
-```
-
-Start the frontend development server:
-```bash
-npm run dev
-```
-*(For production, you would run `npm run build` and serve the `dist` folder using a web server like Nginx).*

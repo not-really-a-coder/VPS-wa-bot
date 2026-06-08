@@ -11,8 +11,6 @@ export default defineConfig({
     },
   },
   build: {
-    outDir: '../',
-    emptyOutDir: false,
     rollupOptions: {
       input: {
         summary_bot: path.resolve(__dirname, 'summary_bot.html')
