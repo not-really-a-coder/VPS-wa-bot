@@ -1,0 +1,4 @@
+node_modules/
+.env
+messages.db
+.wwebjs_auth/

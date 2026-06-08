@@ -1,0 +1,49 @@
+
+services:
+  gateway:
+    build: .
+    container_name: whatsapp_gateway
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    networks:
+      - proxy_network
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 1G
+    volumes:
+      - ./.env:/app/.env
+      - ./config.yaml:/app/config.yaml
+      - ./messages.db:/app/messages.db
+      - ./.wwebjs_auth:/app/.wwebjs_auth
+      - ./media:/app/media
+      - ../dashboard/.htpasswd:/app/.htpasswd
+
+  summary_bot:
+    build: 
+      context: .
+      dockerfile: Dockerfile.python
+    container_name: summary_bot
+    restart: unless-stopped
+    depends_on:
+      - gateway
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
+    volumes:
+      - ./.env:/app/.env
+      - ./config.yaml:/app/config.yaml
+      - ./messages.db:/app/messages.db
+      - ./media:/app/media
+    environment:
+      - TZ=${TZ:-UTC}
+    networks:
+      - proxy_network
+
+networks:
+  proxy_network:
+    external: true

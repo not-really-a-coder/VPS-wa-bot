@@ -1,0 +1,22 @@
+# Node dependencies
+node_modules/
+npm-debug.log
+
+# Python dependencies
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# Environment variables
+.env
+.env.*
+
+# Application specific
+.wwebjs_auth/
+messages.db
+config.yaml
+
+# OS generated files
+.DS_Store
+Thumbs.db
