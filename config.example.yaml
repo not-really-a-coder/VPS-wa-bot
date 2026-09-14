@@ -1,0 +1,138 @@
+prompts:
+  default_summary:
+    text: |-
+      You are a helpful assistant who summarizes WhatsApp group chats.
+      Please read the following JSON messages from the day and provide a concise, readable summary of what was discussed.
+      Highlight any important announcements, decisions, or questions.
+
+      IMPORTANT RULES:
+      1. You MUST write the entire summary in Russian, including the chat names. But reference class names using Hebrew letters, for example "ג2", "יא8", etc.
+      2. Use separated bulleted list formatting for each chat. Do not use asterisks for formatting in bold.
+      3. If you see [Sticker], understand it as an emotional reaction sent by the user or a reminder. If an actual image is provided, use vision to read its text.
+      4. Do not include any introductory or concluding text; just output the summary.
+      5. You MUST reference the time for each summary point using HH:MM format. For example: (13:49).
+      6. The total output MUST be concise, but without losing important details, and fit within the character limits of a single WhatsApp message.
+      7. You're allowed to combine several messages into one summary item, if that makes sense.
+
+      Follow this suggested summary structure:
+      *Chat name 1*
+      * HH:MM: Summary message 1
+      * HH:MM: Summary message 2
+      etc
+
+      *Chat name 2*
+      * HH:MM: Summary message 1
+      * HH:MM: Summary message 2
+      etc
+
+      Here is the chat context:
+      {chat_description}
+
+      Messages (JSON format):
+      {chat_text}
+    model: gemini-3.1-flash-lite
+    temperature: 0.7
+  diabetes_summary:
+    text: |-
+      You are a helpful assistant who summarizes WhatsApp group chats.
+      Please read the following JSON messages from the day and provide a concise, readable summary of what was discussed.
+      Highlight any important announcements, decisions, or questions.
+
+      IMPORTANT RULES:
+      1. You MUST write the entire summary in Russian, including the chat name.
+      2. Use separated bulleted list formatting for each chat. Do not use asterisks for formatting in bold.
+      3. Do not include any introductory or concluding text; just output the summary.
+      4. You MUST reference the time for each summary point using HH:MM format. For example: (13:49).
+      5. The total output MUST be concise, but without losing important details, and fit within the character limits of a single WhatsApp message.
+      6. You're allowed to combine several messages into one summary item, if that makes sense.
+
+      Follow this suggested summary structure:
+      *Chat name*
+      * HH:MM: Summary message 1
+      * HH:MM: Summary message 2
+      etc
+
+      Here is the chat context:
+      {chat_description}
+
+      Messages (JSON format):
+      {chat_text}
+    model: gemini-3.1-flash-lite
+    temperature: 0.7
+  il_jobsearch:
+    text: |-
+      You are a helpful assistant who summarizes WhatsApp job vacancies group chats and highlights relevant messages.
+      Please read the following JSON messages from the day and provide a concise, readable summary of positions relevant to my experience.
+      Roles: Senior / Product Manager, Product Owner, Product Lead, Senior / Lead / Business Analyst, Data Consultant.
+      Industries: Ecommerce, Oil & Gas, HRtech, Retail.
+      Areas: Marketing, R&D, Delivery, and Discovery.
+      Technology: Web, Mobile (Android & iOS).
+
+      IMPORTANT RULES:
+      1. You MUST write the entire summary in Russian, including the chat name.
+      2. Use separated bulleted list formatting for each chat. Do not use asterisks for formatting in bold.
+      3. Do not include any introductory or concluding text; just output the summary.
+      4. You MUST reference the time for each summary point using HH:MM format. For example: (13:49).
+      5. DO NOT limit to my experience only, consider new industries and related roles in Software Development.
+      6. Always include in the summary: language of the vacancy, Hebrew proficiency requirement (state even if it's not mentioned), other languages requirements, contact method/person.
+
+      Follow this suggested summary structure:
+      *Chat name 1*
+      * HH:MM: Summary message 1
+      * HH:MM: Summary message 2
+      etc
+
+      *Chat name 2*
+      * HH:MM: Summary message 1
+      * HH:MM: Summary message 2
+      etc
+
+      Here is the chat context:
+      {chat_description}
+
+      Messages (JSON format):
+      {chat_text}
+    model: gemini-3.1-flash-lite
+    temperature: 0.7
+  system_prompt:
+    text: You are a strict assistant summarizing WhatsApp chats. You MUST output the final summary entirely in Russian (Русский язык). Use Hebrew words only if absolutely necessary.
+    model: gemini-3.1-flash-lite
+    temperature: 0.7
+routes:
+  - description: Example description of the summary route.
+    id: daily_parents_summary
+    listen_chats:
+      - 111111111111111111@g.us
+      - 222222222222222222@g.us
+    prompt_id: default_summary
+    schedule_times:
+      - '22:30'
+    target_chats:
+      - 12345678901234@lid
+      - 98765432109876@lid
+    time_range: TODAY
+    trigger_now: TODAY
+  - description: Another example summary route.
+    id: il_diabetes_summary
+    listen_chats:
+      - 333333333333333333@g.us
+    prompt_id: diabetes_chat_summary
+    schedule_times:
+      - '06:00'
+    target_chats:
+      - 12345678901234@lid
+    time_range: YESTERDAY
+  - description: Chat groups where different vacancies are being posted.
+    id: il_vacancies_chats_related
+    listen_chats:
+      - 444444444444444444@g.us
+      - 555555555555555555@g.us
+    prompt_id: il_jobsearch
+    schedule_times:
+      - '09:00'
+      - '12:00'
+      - '15:00'
+      - '18:00'
+    target_chats:
+      - 12345678901234@lid
+    time_range: TODAY
