@@ -61,6 +61,25 @@ def load_config():
         print(f"Error loading config.yaml: {e}")
         return None
 
+def wait_for_gateway_ready(max_wait=60):
+    """Polls the gateway status endpoint until WhatsApp client is authenticated and ready."""
+    status_url = GATEWAY_URL.replace('/send', '/api/status')
+    start_time = time.time()
+    print("[RECOVERY] Waiting for WhatsApp Gateway to reconnect and authenticate...")
+    while time.time() - start_time < max_wait:
+        try:
+            res = requests.get(status_url, timeout=5)
+            if res.status_code == 200:
+                data = res.json()
+                if data.get('authenticated'):
+                    print("[RECOVERY] WhatsApp Gateway is authenticated and ready!")
+                    return True
+        except Exception:
+            pass
+        time.sleep(5)
+    print(f"[RECOVERY] Gateway did not report authenticated within {max_wait} seconds.")
+    return False
+
 def run_summarization(route_id, time_range_override=None, dry_run=False):
     print(f"[{datetime.now()}] Running summarization for route: {route_id}")
     if not GEMINI_API_KEY:
@@ -120,6 +139,12 @@ def run_summarization(route_id, time_range_override=None, dry_run=False):
         res_sync = requests.post(fetch_url, json=sync_payload, timeout=25)
         if res_sync.status_code == 200:
             print(f"Pre-summarization sync fetched {res_sync.json().get('saved', 0)} new messages.")
+        elif res_sync.status_code == 503:
+            print(f"Pre-summarization sync: gateway restarting ({res_sync.text}). Waiting for recovery...")
+            if wait_for_gateway_ready(max_wait=60):
+                res_sync = requests.post(fetch_url, json=sync_payload, timeout=25)
+                if res_sync.status_code == 200:
+                    print(f"Post-recovery sync fetched {res_sync.json().get('saved', 0)} new messages.")
         else:
             print(f"Pre-summarization sync returned status {res_sync.status_code}: {res_sync.text}")
     except Exception as e:
@@ -324,6 +349,15 @@ def run_summarization(route_id, time_range_override=None, dry_run=False):
                             break
                         else:
                             print(f"Attempt {attempt+1} failed to send summary to {target}: {res.text}")
+                            # If gateway reported it is restarting due to a degraded session, wait for it to recover
+                            try:
+                                err_json = res.json()
+                                if err_json.get('restarting'):
+                                    print("[RECOVERY] Gateway is restarting. Pausing before next retry...")
+                                    wait_for_gateway_ready(max_wait=60)
+                                    continue
+                            except Exception:
+                                pass
                     except Exception as e:
                         print(f"Attempt {attempt+1} error sending summary to {target}: {e}")
                     
@@ -332,7 +366,7 @@ def run_summarization(route_id, time_range_override=None, dry_run=False):
                         time.sleep(10)
                 
                 if not sent_successfully:
-                    print(f"Failed to send summary to {target} after {max_retries} attempts. Will not restart gateway to preserve session.")
+                    print(f"Failed to send summary to {target} after {max_retries} attempts.")
                 
     except Exception as e:
         print(f"Error calling Gemini API or sending message: {e}")

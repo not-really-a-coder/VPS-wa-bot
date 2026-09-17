@@ -249,6 +249,29 @@ app.get(['/qr', '/api/qr.html'], (req, res) => {
     `);
 });
 
+let isRestarting = false;
+function triggerGracefulRestart(reason) {
+    if (isRestarting) return;
+    isRestarting = true;
+    console.warn(`[RECOVERY] Triggering graceful restart due to: ${reason}`);
+    setTimeout(() => {
+        db.close(() => {
+            process.exit(1);
+        });
+    }, 1500);
+}
+
+function isDegradedPuppeteerError(errStr) {
+    return Boolean(
+        errStr && (
+            errStr.includes("Cannot read properties of undefined (reading 'getChat')") ||
+            errStr.includes("Execution context was destroyed") ||
+            errStr.includes("Session closed") ||
+            errStr.includes("Target closed")
+        )
+    );
+}
+
 client.on('message_create', async msg => {
     const chatId = msg.fromMe ? msg.to : msg.from;
     
@@ -350,8 +373,19 @@ app.post('/send', async (req, res) => { console.log('Hit /send route for', req.b
         }
         res.json({ success: true });
     } catch (error) {
+        const errStr = error.toString();
         console.error(`Error in /send to ${chatId}:`, error);
-        res.status(500).json({ error: error.toString() });
+
+        if (isDegradedPuppeteerError(errStr)) {
+            triggerGracefulRestart(`/send failed with ${errStr}`);
+            return res.status(503).json({ 
+                error: errStr, 
+                restarting: true, 
+                message: 'Degraded WhatsApp Web session detected. Gateway is restarting for recovery.' 
+            });
+        }
+
+        res.status(500).json({ error: errStr });
     }
 });
 
@@ -613,7 +647,11 @@ async function fetchHistoryForListenChats(limit = 100, targetChatIds = null) {
             }
         }
     } catch (err) {
-        console.error('[SYNC] Error during batch history fetch:', err.message || err);
+        const errStr = err.message || err.toString();
+        console.error('[SYNC] Error during batch history fetch:', errStr);
+        if (isDegradedPuppeteerError(errStr)) {
+            triggerGracefulRestart(`History fetch failed with ${errStr}`);
+        }
     }
     updateLastSync();
     console.log(`[SYNC] Finished native history fetch. Total messages processed/saved: ${totalSaved}`);
@@ -805,8 +843,17 @@ app.post('/api/fetch_history', async (req, res) => {
         const saved = await fetchHistoryForListenChats(limit, targetChatIds);
         res.json({ success: true, saved: saved });
     } catch (e) {
+        const errStr = e.toString();
         console.error('Error in /api/fetch_history:', e);
-        res.status(500).json({ error: e.toString() });
+        if (isDegradedPuppeteerError(errStr)) {
+            triggerGracefulRestart(`/api/fetch_history failed with ${errStr}`);
+            return res.status(503).json({
+                error: errStr,
+                restarting: true,
+                message: 'Degraded WhatsApp Web session detected. Gateway is restarting for recovery.'
+            });
+        }
+        res.status(500).json({ error: errStr });
     }
 });
 
